@@ -414,7 +414,18 @@ class Reference_Surface(object):
     @staticmethod
     def map_datum_to_surface(d,m_from_screen):
         pos = np.array([d['norm_pos']]).reshape(1,1,2)
-        mapped_pos = cv2.perspectiveTransform(pos , m_from_screen )
+        try:
+            mapped_pos = cv2.perspectiveTransform(pos, m_from_screen )
+        except cv2.error as e:
+            logger.error('PERSPECTIVE TRANSFORM CRASH:')
+            logger.error('          pos: shape={} type={}'.format(pos.shape, pos.dtype))
+            logger.error('m_from_screen: shape={} type={}'.format(m_from_screen.shape, m_from_screen.dtype))
+            logger.error('============================')
+            logger.error(str(pos))
+            logger.error('============================')
+            logger.error(str(m_from_screen))
+            logger.error('^^^^^^^^^^^^^^^^^^^^^^^^^^^^')
+            raise e
         mapped_pos.shape = (2)
         on_srf = bool((0 <= mapped_pos[0] <= 1) and (0 <= mapped_pos[1] <= 1))
         return {'topic':d['topic']+"_on_surface",'norm_pos':(mapped_pos[0],mapped_pos[1]),'confidence':d['confidence'],'on_srf':on_srf,'base_data':d }
